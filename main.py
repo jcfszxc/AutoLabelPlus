@@ -1,4 +1,4 @@
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 from ui_main import Ui_autoLabel  # 导入UI类
 from PyQt5.QtWidgets import QFileDialog, QGraphicsScene
 from PyQt5.QtGui import QPixmap
@@ -31,7 +31,13 @@ class MainWindow(QtWidgets.QWidget):
         
         # 连接文件列表的项目点击信号
         self.ui.fileListWidget.itemClicked.connect(self.on_file_item_clicked)
+        # 连接缩略图列表的项目点击信号
+        self.ui.thumbnailPreview.itemClicked.connect(self.on_thumbnail_clicked)
         
+        # 设置缩略图列表的其他属性
+        self.ui.thumbnailPreview.setSpacing(10)  # 设置缩略图间距
+        self.ui.thumbnailPreview.setResizeMode(QtWidgets.QListWidget.Adjust)
+
         # 存储当前选择的目录路径
         self.current_directory = None
         self.current_image_index = -1
@@ -51,18 +57,17 @@ class MainWindow(QtWidgets.QWidget):
         self.move(new_left, new_top)
 
 
+
     def open_directory(self):
         """打开文件夹选择对话框并显示第一张图片"""
-        # 打开文件夹对话框，如果已经有选择过的目录，就从那个目录开始，否则从当前目录开始
         start_dir = self.current_directory if self.current_directory else "./"
-        directory = QFileDialog.getExistingDirectory(
+        directory = QtWidgets.QFileDialog.getExistingDirectory(
             self,
             "选择文件夹",
             start_dir,
-            QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
+            QtWidgets.QFileDialog.ShowDirsOnly | QtWidgets.QFileDialog.DontResolveSymlinks
         )
 
-        # 如果用户选择了文件夹（没有点击取消）
         if directory:
             self.current_directory = directory
             print(f"选择的文件夹路径: {directory}")
@@ -79,39 +84,62 @@ class MainWindow(QtWidgets.QWidget):
                         if item.lower().endswith(image_extensions):
                             image_files.append(item_path)
                     elif os.path.isdir(item_path):
-                        # 递归搜索子文件夹
                         image_files.extend(find_images(item_path))
-                return sorted(image_files)  # 对文件列表进行排序
+                return sorted(image_files)
             
-            # 调用递归函数获取所有图片
+            # 获取所有图片
             self.image_files = find_images(directory)
                     
-            # 如果找到了图片文件
             if self.image_files:
-                # 清空文件列表
+                # 清空文件列表和缩略图列表
                 self.ui.fileListWidget.clear()
+                self.ui.thumbnailPreview.clear()
                 
-                # 添加所有图片的相对路径到列表
+                # 添加所有图片到列表和缩略图
                 for image_path in self.image_files:
                     # 获取相对路径
                     rel_path = os.path.relpath(image_path, directory)
-                    # 创建列表项
-                    item = QtWidgets.QListWidgetItem(rel_path)
-                    # 存储完整路径作为项目的数据
-                    item.setData(QtCore.Qt.UserRole, image_path)
-                    # 添加到列表控件
-                    self.ui.fileListWidget.addItem(item)
+                    
+                    # 添加到文件列表
+                    file_item = QtWidgets.QListWidgetItem(rel_path)
+                    file_item.setData(QtCore.Qt.UserRole, image_path)
+                    self.ui.fileListWidget.addItem(file_item)
+                    
+                    # 创建并添加缩略图
+                    thumbnail_item = QtWidgets.QListWidgetItem()
+                    thumbnail_item.setData(QtCore.Qt.UserRole, image_path)
+                    # 创建缩略图
+                    thumbnail_icon = self.create_thumbnail(image_path)
+                    if thumbnail_icon:
+                        thumbnail_item.setIcon(thumbnail_icon)
+                        thumbnail_item.setText(os.path.basename(image_path))  # 设置文件名为提示文本
+                        self.ui.thumbnailPreview.addItem(thumbnail_item)
                 
                 # 设置当前索引为0并显示第一张图片
                 self.current_image_index = 0
                 self.display_current_image()
                 # 选中第一个列表项
                 self.ui.fileListWidget.setCurrentRow(0)
+                self.ui.thumbnailPreview.setCurrentRow(0)
                 # 更新按钮状态
                 self.update_navigation_buttons()
             else:
                 print("未在选择的目录中找到图片文件")
 
+    def create_thumbnail(self, image_path):
+        """创建图片缩略图"""
+        # 加载图片
+        image = QtGui.QImage(image_path)
+        if image.isNull():
+            return None
+            
+        # 创建缩略图（保持宽高比）
+        thumbnail_size = QtCore.QSize(100, 100)
+        scaled_image = image.scaled(thumbnail_size, 
+                                  QtCore.Qt.KeepAspectRatio, 
+                                  QtCore.Qt.SmoothTransformation)
+        
+        return QtGui.QIcon(QtGui.QPixmap.fromImage(scaled_image))
     def on_file_item_clicked(self, item):
         """处理文件列表项被点击的事件"""
         # 获取被点击项目的完整路径
@@ -124,6 +152,19 @@ class MainWindow(QtWidgets.QWidget):
         except ValueError:
             print("无法找到选中的图片")
 
+    def on_thumbnail_clicked(self, item):
+        """处理缩略图被点击的事件"""
+        # 获取被点击项目的完整路径
+        clicked_path = item.data(QtCore.Qt.UserRole)
+        try:
+            self.current_image_index = self.image_files.index(clicked_path)
+            self.display_current_image()
+            # 同步选中文件列表
+            self.ui.fileListWidget.setCurrentRow(self.current_image_index)
+            self.update_navigation_buttons()
+        except ValueError:
+            print("无法找到选中的图片")
+            
     def display_current_image(self):
         """显示当前索引对应的图片"""
         if 0 <= self.current_image_index < len(self.image_files):
