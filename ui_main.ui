@@ -6,15 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>689</width>
-    <height>528</height>
+    <width>975</width>
+    <height>702</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>AutoLabelPlus</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
-   <item>
+  <layout class="QFormLayout" name="formLayout">
+   <item row="0" column="0" colspan="2">
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QPushButton" name="pushButtonOpenDir">
@@ -39,7 +39,14 @@
      </item>
     </layout>
    </item>
-   <item>
+   <item row="1" column="0">
+    <widget class="QListWidget" name="fileListWidget">
+     <property name="sortingEnabled">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
     <widget class="ZoomableGraphicsView" name="graphicsView"/>
    </item>
   </layout>
@@ -48,7 +55,7 @@
   <customwidget>
    <class>ZoomableGraphicsView</class>
    <extends>QGraphicsView</extends>
-   <header>zoomable_graphics_view.py</header>
+   <header>zoomable_graphics_view</header>
   </customwidget>
  </customwidgets>
  <resources/>

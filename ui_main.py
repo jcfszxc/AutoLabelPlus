@@ -14,9 +14,9 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_autoLabel(object):
     def setupUi(self, autoLabel):
         autoLabel.setObjectName("autoLabel")
-        autoLabel.resize(689, 528)
-        self.verticalLayout = QtWidgets.QVBoxLayout(autoLabel)
-        self.verticalLayout.setObjectName("verticalLayout")
+        autoLabel.resize(975, 702)
+        self.formLayout = QtWidgets.QFormLayout(autoLabel)
+        self.formLayout.setObjectName("formLayout")
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.pushButtonOpenDir = QtWidgets.QPushButton(autoLabel)
@@ -28,10 +28,13 @@ class Ui_autoLabel(object):
         self.pushButtonNextImage = QtWidgets.QPushButton(autoLabel)
         self.pushButtonNextImage.setObjectName("pushButtonNextImage")
         self.horizontalLayout.addWidget(self.pushButtonNextImage)
-        self.verticalLayout.addLayout(self.horizontalLayout)
+        self.formLayout.setLayout(0, QtWidgets.QFormLayout.SpanningRole, self.horizontalLayout)
+        self.fileListWidget = QtWidgets.QListWidget(autoLabel)
+        self.fileListWidget.setObjectName("fileListWidget")
+        self.formLayout.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.fileListWidget)
         self.graphicsView = ZoomableGraphicsView(autoLabel)
         self.graphicsView.setObjectName("graphicsView")
-        self.verticalLayout.addWidget(self.graphicsView)
+        self.formLayout.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.graphicsView)
 
         self.retranslateUi(autoLabel)
         QtCore.QMetaObject.connectSlotsByName(autoLabel)
@@ -42,6 +45,7 @@ class Ui_autoLabel(object):
         self.pushButtonOpenDir.setText(_translate("autoLabel", "Open Dir"))
         self.pushButtonPrevImage.setText(_translate("autoLabel", "Prev Image"))
         self.pushButtonNextImage.setText(_translate("autoLabel", "Next Image"))
+        self.fileListWidget.setSortingEnabled(True)
 from zoomable_graphics_view import ZoomableGraphicsView
 
 

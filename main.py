@@ -29,6 +29,9 @@ class MainWindow(QtWidgets.QWidget):
         self.ui.pushButtonNextImage.clicked.connect(self.next_image)
         self.ui.pushButtonPrevImage.clicked.connect(self.previous_image)
         
+        # 连接文件列表的项目点击信号
+        self.ui.fileListWidget.itemClicked.connect(self.on_file_item_clicked)
+        
         # 存储当前选择的目录路径
         self.current_directory = None
         self.current_image_index = -1
@@ -85,13 +88,41 @@ class MainWindow(QtWidgets.QWidget):
                     
             # 如果找到了图片文件
             if self.image_files:
+                # 清空文件列表
+                self.ui.fileListWidget.clear()
+                
+                # 添加所有图片的相对路径到列表
+                for image_path in self.image_files:
+                    # 获取相对路径
+                    rel_path = os.path.relpath(image_path, directory)
+                    # 创建列表项
+                    item = QtWidgets.QListWidgetItem(rel_path)
+                    # 存储完整路径作为项目的数据
+                    item.setData(QtCore.Qt.UserRole, image_path)
+                    # 添加到列表控件
+                    self.ui.fileListWidget.addItem(item)
+                
                 # 设置当前索引为0并显示第一张图片
                 self.current_image_index = 0
                 self.display_current_image()
+                # 选中第一个列表项
+                self.ui.fileListWidget.setCurrentRow(0)
                 # 更新按钮状态
                 self.update_navigation_buttons()
             else:
                 print("未在选择的目录中找到图片文件")
+
+    def on_file_item_clicked(self, item):
+        """处理文件列表项被点击的事件"""
+        # 获取被点击项目的完整路径
+        clicked_path = item.data(QtCore.Qt.UserRole)
+        # 找到该路径在图片列表中的索引
+        try:
+            self.current_image_index = self.image_files.index(clicked_path)
+            self.display_current_image()
+            self.update_navigation_buttons()
+        except ValueError:
+            print("无法找到选中的图片")
 
     def display_current_image(self):
         """显示当前索引对应的图片"""
