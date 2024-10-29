@@ -26,9 +26,12 @@ class MainWindow(QtWidgets.QWidget):
 
         # 连接按钮点击信号到槽函数
         self.ui.pushButtonOpenDir.clicked.connect(self.open_directory)
+        self.ui.pushButtonNextImage.clicked.connect(self.next_image)
+        self.ui.pushButtonPrevImage.clicked.connect(self.previous_image)
         
         # 存储当前选择的目录路径
         self.current_directory = None
+        self.current_image_index = -1
         
         # 在这里可以添加其他初始化代码
 
@@ -43,6 +46,7 @@ class MainWindow(QtWidgets.QWidget):
         new_top = (screen.height() - size.height()) // 2
         # 移动窗口
         self.move(new_left, new_top)
+
 
     def open_directory(self):
         """打开文件夹选择对话框并显示第一张图片"""
@@ -74,44 +78,75 @@ class MainWindow(QtWidgets.QWidget):
                     elif os.path.isdir(item_path):
                         # 递归搜索子文件夹
                         image_files.extend(find_images(item_path))
-                return image_files
+                return sorted(image_files)  # 对文件列表进行排序
             
             # 调用递归函数获取所有图片
-            image_files = find_images(directory)
+            self.image_files = find_images(directory)
                     
             # 如果找到了图片文件
-            if image_files:
-                # 获取第一张图片
-                first_image = image_files[0]
-                print(f"加载第一张图片: {first_image}")
-                
-                # 创建QGraphicsScene
-                scene = QGraphicsScene()
-                
-                # 加载图片
-                pixmap = QPixmap(first_image)
-                
-                # 根据GraphicsView的大小调整图片大小
-                view_size = self.ui.graphicsView.size()
-                scaled_pixmap = pixmap.scaled(
-                    view_size,
-                    Qt.KeepAspectRatio,
-                    Qt.SmoothTransformation
-                )
-                
-                # 将图片添加到场景中
-                scene.addPixmap(scaled_pixmap)
-                
-                # 设置场景到GraphicsView
-                self.ui.graphicsView.setScene(scene)
-                
-                # 调整视图以显示整个场景
-                self.ui.graphicsView.fitInView(
-                    scene.sceneRect(),
-                    Qt.KeepAspectRatio
-                )
+            if self.image_files:
+                # 设置当前索引为0并显示第一张图片
+                self.current_image_index = 0
+                self.display_current_image()
+                # 更新按钮状态
+                self.update_navigation_buttons()
             else:
                 print("未在选择的目录中找到图片文件")
+
+    def display_current_image(self):
+        """显示当前索引对应的图片"""
+        if 0 <= self.current_image_index < len(self.image_files):
+            current_image = self.image_files[self.current_image_index]
+            print(f"显示图片: {current_image}")
+            
+            # 创建QGraphicsScene
+            scene = QGraphicsScene()
+            
+            # 加载图片
+            pixmap = QPixmap(current_image)
+            
+            # 根据GraphicsView的大小调整图片大小
+            view_size = self.ui.graphicsView.size()
+            scaled_pixmap = pixmap.scaled(
+                view_size,
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation
+            )
+            
+            # 将图片添加到场景中
+            scene.addPixmap(scaled_pixmap)
+            
+            # 设置场景到GraphicsView
+            self.ui.graphicsView.setScene(scene)
+            
+            # 调整视图以显示整个场景
+            self.ui.graphicsView.fitInView(
+                scene.sceneRect(),
+                Qt.KeepAspectRatio
+            )
+
+    def next_image(self):
+        """切换到下一张图片"""
+        if self.current_image_index < len(self.image_files) - 1:
+            self.current_image_index += 1
+            self.display_current_image()
+            self.update_navigation_buttons()
+
+    def previous_image(self):
+        """切换到上一张图片"""
+        if self.current_image_index > 0:
+            self.current_image_index -= 1
+            self.display_current_image()
+            self.update_navigation_buttons()
+
+    def update_navigation_buttons(self):
+        """更新导航按钮的启用状态"""
+        # 当没有上一张图片时禁用上一张按钮
+        self.ui.pushButtonPrevImage.setEnabled(self.current_image_index > 0)
+        # 当没有下一张图片时禁用下一张按钮
+        self.ui.pushButtonNextImage.setEnabled(
+            self.current_image_index < len(self.image_files) - 1
+        )
 
 
 if __name__ == "__main__":
